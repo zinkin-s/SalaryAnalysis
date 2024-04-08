@@ -21,11 +21,14 @@ def wage_rate_df(df1, df2, s):
     for i in range(1, len(arr)):
         res.append(arr[i] / arr[i-1])
 
-    nwr['data'] = np.array(res) * 100
-    nwr['parameter'] = ['ИНЗП'] * len(nwr)
+    xs = np.array(res) * 100
+
+    ys = df2['Всего'].iloc[1:]
+    nwr['data'] = 100 + ys
+    nwr['parameter'] = ['ИПЦ'] * len(nwr)
 
     rwr = pd.DataFrame(df1['год'].iloc[1:])
-    rwr['data'] = nwr['data'] / ((100 + df2['Всего'])/100)
+    rwr['data'] = 100*xs / nwr['data']
     rwr['parameter'] = ['РЗП'] * len(rwr)
 
     return pd.concat([nwr, rwr], ignore_index=True)
@@ -56,7 +59,33 @@ nrw = base_1.mark_line(
 ).encode(
     alt.Y('data', title='Заработная плата, руб.')
 )
+wr_df = wage_rate_df(df, inflation, selector)
 
-st.altair_chart(nrw, use_container_width=True, theme='streamlit')
+base_2 = alt.Chart(wr_df).encode(
+    alt.Color('parameter'),
+    alt.X(
+        'год',
+        axis = alt.Axis(title='год'))
+)
 
+wage_rate = base_2.mark_line(
+    point=alt.OverlayMarkDef(filled=False, fill="white")
+).encode(
+    alt.Y('data', title='% к предыдущему году')
+)
+
+tab1, tab2, tab3 = st.tabs([
+    'НЗП и РЗП за 2000-2023 гг.',
+    'ИПЦ и ИЗРП за 2000-2023 гг.',
+    'ИПЦ и ИЗРП к базовому году'
+])
+
+with tab1:
+    st.altair_chart(nrw, use_container_width=True, theme='streamlit')
+
+with tab2:
+    st.altair_chart(wage_rate, use_container_width=True, theme='streamlit')
+
+with tab3:
+    st.text('1xxc')
 st.dataframe(wage_rate_df(df, inflation, selector))
