@@ -25,9 +25,25 @@ inflation = pd.read_csv('data/inflation.csv').sort_values('Год').reset_index(
 
 sbox = tuple(df.drop(['год'], axis=1).columns)
 
-selector = st.selectbox(
+selector = st.sidebar.selectbox(
     'Выберите отрасль экономики:',
     sbox
 )
+
+nrw_df = real_wage_df(df, inflation, selector)
+base_1 = alt.Chart(nrw_df).encode(
+    alt.Color('parameter'),
+    alt.X(
+        'год',
+        axis = alt.Axis(title='год'))
+)
+
+nrw = base_1.mark_line(
+    point=alt.OverlayMarkDef(filled=False, fill="white")
+).encode(
+    alt.Y('data', title='Заработная плата, руб.')
+)
+
+st.altair_chart(nrw, use_container_width=True, theme='streamlit')
 
 st.dataframe(real_wage_df(df, inflation, selector))
