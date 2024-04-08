@@ -14,8 +14,21 @@ def real_wage_df(df1, df2, s):
 
     return pd.concat([nw, rw], ignore_index=True)
 
+def wage_rate_df(df1, df2, s):
+    nwr = pd.DataFrame(df1['год'].iloc[1:])
+    arr = list(df1[s])
+    res = []
+    for i in range(1, len(arr)):
+        res.append(arr[i] / arr[i-1])
 
+    nwr['data'] = np.array(res) * 100
+    nwr['parameter'] = ['ИНЗП'] * len(nwr)
 
+    rwr = pd.DataFrame(df1['год'].iloc[1:])
+    rwr['data'] = nwr['data'] / ((100 + df2['Всего'])/100)
+    rwr['parameter'] = ['РЗП'] * len(rwr)
+
+    return pd.concat([nwr, rwr], ignore_index=True)
 
 
 df = pd.read_csv('data/out.csv')
@@ -46,4 +59,4 @@ nrw = base_1.mark_line(
 
 st.altair_chart(nrw, use_container_width=True, theme='streamlit')
 
-st.dataframe(real_wage_df(df, inflation, selector))
+st.dataframe(wage_rate_df(df, inflation, selector))
