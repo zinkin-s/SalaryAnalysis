@@ -3,18 +3,18 @@ import numpy as np
 import streamlit as st
 import altair as alt
 
-def real_wage_df(df1, df2, s):
+def real_wage_df(df1, df2, s, param1, param2):
     nw = pd.DataFrame(df1['год'])
     nw['data'] = df1[s]
-    nw['parameter'] = ['НЗП'] * len(nw)
+    nw['parameter'] = [param1] * len(nw)
 
     rw = pd.DataFrame(df1['год'])
     rw['data'] = df1[s] / ((100 + df2['Всего'])/100)
-    rw['parameter'] = ['РЗП'] * len(rw)
+    rw['parameter'] = [param2] * len(rw)
 
     return pd.concat([nw, rw], ignore_index=True)
 
-def wage_rate_df(df1, df2, s):
+def wage_rate_df(df1, df2, s, param1, param2):
     nwr = pd.DataFrame(df1['год'].iloc[1:])
     arr = list(df1[s])
     res = []
@@ -25,15 +25,15 @@ def wage_rate_df(df1, df2, s):
 
     ys = df2['Всего'].iloc[1:]
     nwr['data'] = 100 + ys
-    nwr['parameter'] = ['ИПЦ'] * len(nwr)
+    nwr['parameter'] = [param1] * len(nwr)
 
     rwr = pd.DataFrame(df1['год'].iloc[1:])
     rwr['data'] = 100*xs / nwr['data']
-    rwr['parameter'] = ['ИРЗП'] * len(rwr)
+    rwr['parameter'] = [param2] * len(rwr)
 
     return pd.concat([nwr, rwr], ignore_index=True)
 
-def to_base_year(df1, df2):
+def to_base_year(df1, df2, param1, param2):
     cpi = df1.iloc[1:]
     lst = list(cpi['Всего'])
     res = []
@@ -44,7 +44,7 @@ def to_base_year(df1, df2):
 
     xs = 100 * np.array(res)
 
-    rwr = df2.loc[df2['parameter']=='ИРЗП']
+    rwr = df2.loc[df2['parameter']==param2]
     ls = list(rwr.data)
     res = []
     t = 1
@@ -56,11 +56,11 @@ def to_base_year(df1, df2):
 
     c_rate = pd.DataFrame(df['год'].iloc[1:])
     c_rate['data'] = xs
-    c_rate['parameter'] = ['ИПЦ'] * len(c_rate)
+    c_rate['parameter'] = [param1] * len(c_rate)
 
     r_rate = pd.DataFrame(df['год'].iloc[1:])
     r_rate['data'] = ys
-    r_rate['parameter'] = ['ИРЗП'] * len(c_rate)
+    r_rate['parameter'] = [param2] * len(c_rate)
     return pd.concat([c_rate, r_rate], ignore_index=True)
 
 def plot_chart(df, title):
@@ -78,22 +78,25 @@ def plot_chart(df, title):
 
 
 df = pd.read_csv('data/out.csv')
-df = df.drop(['всего по  экономике', 'производство пищевых продуктов, включая напитки, и табака'], axis=1)
+df = df.drop(['производство пищевых продуктов, включая напитки, и табака'], axis=1)
 df['год'] = pd.to_datetime(df['год'], format='%Y')
 inflation = pd.read_csv('data/inflation.csv').sort_values('Год').reset_index()
 
-sbox = tuple(df.drop(['год'], axis=1).columns)
+sbox = tuple(df.drop(['всего по  экономике', 'год'], axis=1).columns)
 
 selector = st.sidebar.selectbox(
     'Выберите отрасль экономики:',
     sbox
 )
 
-nrw_df = real_wage_df(df, inflation, selector)
+nrw_df = real_wage_df(df, inflation, selector, 'НЗП', 'РЗП')
+nrw_df_allover = real_wage_df(df, inflation, 'всего по  экономике', 'НЗП по экономике', 'РЗП по экономике')
 
-wr_df = wage_rate_df(df, inflation, selector)
+wr_df = wage_rate_df(df, inflation, selector, 'ИПЦ', 'ИРЗП')
+wr_df_allover = wage_rate_df(df, inflation, 'всего по  экономике', 'ИПЦ', 'ИРЗП по экономике')
 
-cr_df = to_base_year(inflation, wr_df)
+cr_df = to_base_year(inflation, wr_df, 'ИПЦ', 'ИРЗП')
+cr_df_allover = to_base_year(inflation, wr_df_allover, 'ИПЦ', 'ИРЗП по экономике')
 
 tab1, tab2, tab3 = st.tabs([
     'НЗП и РЗП за 2000-2023 гг.',
@@ -103,15 +106,16 @@ tab1, tab2, tab3 = st.tabs([
 
 with tab1:
     nrw = plot_chart(nrw_df, 'Заработная плата, руб.')
-    st.altair_chart(nrw, use_container_width=True, theme='streamlit')
+    nrw_allover = plot_chart(nrw_df_allover, 'Заработная плата, руб.')
+    st.altair_chart(nrw+nrw_allover, use_container_width=True, theme='streamlit')
 
 with tab2:
     wr = plot_chart(wr_df, '% к предыдущему году году')
-    st.altair_chart(wr, use_container_width=True, theme='streamlit')
+    wr_allover = plot_chart(wr_df_allover[wr_df_allover['parameter']=='ИРЗП по экономике'], '% к предыдущему году году')
+    st.altair_chart(wr+wr_allover, use_container_width=True, theme='streamlit')
 
 with tab3:
     cr_rate = plot_chart(cr_df, '% к базовому году')
-    st.altair_chart(cr_rate, use_container_width=True, theme='streamlit')
+    cr_rate_allover = plot_chart(cr_df_allover[cr_df_allover['parameter']=='ИРЗП по экономике'], '% к предыдущему году году')
+    st.altair_chart(cr_rate+cr_rate_allover, use_container_width=True, theme='streamlit')
 
-chart = plot_chart(nrw_df, 'Заработная плата, руб.')
-#st.altair_chart(chart, use_container_width=True, theme='streamlit')
