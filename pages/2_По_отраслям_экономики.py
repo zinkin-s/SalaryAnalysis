@@ -34,7 +34,7 @@ def wage_rate_df(df1, df2, s):
     return pd.concat([nwr, rwr], ignore_index=True)
 
 def plot_chart(df, title):
-    base = alt.Chart(nrw_df).encode(
+    base = alt.Chart(df).encode(
     alt.Color('parameter'),
     alt.X(
         'год',
@@ -63,18 +63,6 @@ nrw_df = real_wage_df(df, inflation, selector)
 
 wr_df = wage_rate_df(df, inflation, selector)
 
-base_2 = alt.Chart(wr_df).encode(
-    alt.Color('parameter'),
-    alt.X(
-        'год',
-        axis = alt.Axis(title='год'))
-)
-
-wage_rate = base_2.mark_line(
-    point=alt.OverlayMarkDef(filled=False, fill="white")
-).encode(
-    alt.Y('data', title='% к предыдущему году')
-)
 
 cpi = inflation.iloc[1:]
 lst = list(cpi['Всего'])
@@ -105,18 +93,6 @@ r_rate['data'] = ys
 r_rate['parameter'] = ['ИРЗП'] * len(c_rate)
 cr_df = pd.concat([c_rate, r_rate], ignore_index=True)
 
-base3 = alt.Chart(cr_df).encode(
-    alt.Color('parameter'),
-    alt.X(
-        'год',
-        axis = alt.Axis(title='год'))
-)
-
-chart = base3.mark_line(
-    point=alt.OverlayMarkDef(filled=False, fill="white")
-).encode(
-    alt.Y('data', title='% к базовому году')
-)
 
 tab1, tab2, tab3 = st.tabs([
     'НЗП и РЗП за 2000-2023 гг.',
@@ -129,10 +105,12 @@ with tab1:
     st.altair_chart(nrw, use_container_width=True, theme='streamlit')
 
 with tab2:
-    st.altair_chart(wage_rate, use_container_width=True, theme='streamlit')
+    wr = plot_chart(wr_df, '% к предыдущему году году')
+    st.altair_chart(wr, use_container_width=True, theme='streamlit')
 
 with tab3:
-    st.altair_chart(chart, use_container_width=True, theme='streamlit')
+    cr_rate = plot_chart(cr_df, '% к базовому году')
+    st.altair_chart(cr_rate, use_container_width=True, theme='streamlit')
 
 chart = plot_chart(nrw_df, 'Заработная плата, руб.')
 #st.altair_chart(chart, use_container_width=True, theme='streamlit')
