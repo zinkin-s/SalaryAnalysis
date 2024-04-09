@@ -33,7 +33,18 @@ def wage_rate_df(df1, df2, s):
 
     return pd.concat([nwr, rwr], ignore_index=True)
 
+def plot_chart(df, title):
+    base = alt.Chart(nrw_df).encode(
+    alt.Color('parameter'),
+    alt.X(
+        'год',
+        axis = alt.Axis(title='год')))
 
+    chart = base.mark_line(
+    point=alt.OverlayMarkDef(filled=False, fill="white")
+    ).encode(
+    alt.Y('data', title=title))
+    return chart
 
 
 df = pd.read_csv('data/out.csv')
@@ -49,18 +60,7 @@ selector = st.sidebar.selectbox(
 )
 
 nrw_df = real_wage_df(df, inflation, selector)
-base_1 = alt.Chart(nrw_df).encode(
-    alt.Color('parameter'),
-    alt.X(
-        'год',
-        axis = alt.Axis(title='год'))
-)
 
-nrw = base_1.mark_line(
-    point=alt.OverlayMarkDef(filled=False, fill="white")
-).encode(
-    alt.Y('data', title='Заработная плата, руб.')
-)
 wr_df = wage_rate_df(df, inflation, selector)
 
 base_2 = alt.Chart(wr_df).encode(
@@ -125,6 +125,7 @@ tab1, tab2, tab3 = st.tabs([
 ])
 
 with tab1:
+    nrw = plot_chart(nrw_df, 'Заработная плата, руб.')
     st.altair_chart(nrw, use_container_width=True, theme='streamlit')
 
 with tab2:
@@ -133,3 +134,5 @@ with tab2:
 with tab3:
     st.altair_chart(chart, use_container_width=True, theme='streamlit')
 
+chart = plot_chart(nrw_df, 'Заработная плата, руб.')
+#st.altair_chart(chart, use_container_width=True, theme='streamlit')
