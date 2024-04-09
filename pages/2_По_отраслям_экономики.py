@@ -104,18 +104,33 @@ tab1, tab2, tab3 = st.tabs([
     'ИПЦ и ИЗРП к базовому году'
 ])
 
-with tab1:
-    nrw = plot_chart(nrw_df, 'Заработная плата, руб.')
-    nrw_allover = plot_chart(nrw_df_allover, 'Заработная плата, руб.')
-    st.altair_chart(nrw+nrw_allover, use_container_width=True, theme='streamlit')
+allover_on = st.sidebar.toggle(
+     "Отображать данные по всей экономике"
+)
+if allover_on:
+    with tab1:
+        nrw = plot_chart(nrw_df, 'Заработная плата, руб.')
+        nrw_allover = plot_chart(nrw_df_allover, 'Заработная плата, руб.')
+        st.altair_chart(nrw+nrw_allover, use_container_width=True, theme='streamlit')
 
-with tab2:
-    wr = plot_chart(wr_df, '% к предыдущему году году')
-    wr_allover = plot_chart(wr_df_allover[wr_df_allover['parameter']=='ИРЗП по экономике'], '% к предыдущему году году')
-    st.altair_chart(wr+wr_allover, use_container_width=True, theme='streamlit')
+    with tab2:
+        wr = plot_chart(wr_df, '% к предыдущему году году')
+        wr_allover = plot_chart(wr_df_allover[wr_df_allover['parameter']=='ИРЗП по экономике'], '% к предыдущему году году')
+        st.altair_chart(wr+wr_allover, use_container_width=True, theme='streamlit')
 
-with tab3:
-    cr_rate = plot_chart(cr_df, '% к базовому году')
-    cr_rate_allover = plot_chart(cr_df_allover[cr_df_allover['parameter']=='ИРЗП по экономике'], '% к предыдущему году году')
-    st.altair_chart(cr_rate+cr_rate_allover, use_container_width=True, theme='streamlit')
+    with tab3:
+        cr_rate = plot_chart(cr_df, '% к базовому году')
+        cr_rate_allover = plot_chart(cr_df_allover[cr_df_allover['parameter']=='ИРЗП по экономике'], '% к предыдущему году году')
+        st.altair_chart(cr_rate+cr_rate_allover, use_container_width=True, theme='streamlit')
+else:
+    with tab1:
+        nrw = plot_chart(nrw_df, 'Заработная плата, руб.')
+        st.altair_chart(nrw, use_container_width=True, theme='streamlit')
 
+    with tab2:
+        wr = plot_chart(wr_df, '% к предыдущему году году')
+        st.altair_chart(wr, use_container_width=True, theme='streamlit')
+
+    with tab3:
+        cr_rate = plot_chart(cr_df, '% к базовому году')
+        st.altair_chart(cr_rate, use_container_width=True, theme='streamlit')
