@@ -33,6 +33,36 @@ def wage_rate_df(df1, df2, s):
 
     return pd.concat([nwr, rwr], ignore_index=True)
 
+def to_base_year(df1, df2):
+    cpi = df1.iloc[1:]
+    lst = list(cpi['Всего'])
+    res = []
+    t = 1
+    for i in range(len(lst)):
+            t = t * ((100 + lst[i])/100)
+            res.append(t)
+
+    xs = 100 * np.array(res)
+
+    rwr = df2.loc[df2['parameter']=='ИРЗП']
+    ls = list(rwr.data)
+    res = []
+    t = 1
+    for i in range(len(ls)):
+            t = t * ls[i] / 100
+            res.append(t)
+
+    ys = 100*np.array(res)
+
+    c_rate = pd.DataFrame(df['год'].iloc[1:])
+    c_rate['data'] = xs
+    c_rate['parameter'] = ['ИПЦ'] * len(c_rate)
+
+    r_rate = pd.DataFrame(df['год'].iloc[1:])
+    r_rate['data'] = ys
+    r_rate['parameter'] = ['ИРЗП'] * len(c_rate)
+    return pd.concat([c_rate, r_rate], ignore_index=True)
+
 def plot_chart(df, title):
     base = alt.Chart(df).encode(
     alt.Color('parameter'),
@@ -63,36 +93,7 @@ nrw_df = real_wage_df(df, inflation, selector)
 
 wr_df = wage_rate_df(df, inflation, selector)
 
-
-cpi = inflation.iloc[1:]
-lst = list(cpi['Всего'])
-res = []
-t = 1
-for i in range(len(lst)):
-        t = t * ((100 + lst[i])/100)
-        res.append(t)
-
-xs = 100 * np.array(res)
-
-rwr = wr_df.loc[wr_df['parameter']=='ИРЗП']
-ls = list(rwr.data)
-res = []
-t = 1
-for i in range(len(ls)):
-        t = t * ls[i] / 100
-        res.append(t)
-
-ys = 100*np.array(res)
-
-c_rate = pd.DataFrame(df['год'].iloc[1:])
-c_rate['data'] = xs
-c_rate['parameter'] = ['ИПЦ'] * len(c_rate)
-
-r_rate = pd.DataFrame(df['год'].iloc[1:])
-r_rate['data'] = ys
-r_rate['parameter'] = ['ИРЗП'] * len(c_rate)
-cr_df = pd.concat([c_rate, r_rate], ignore_index=True)
-
+cr_df = to_base_year(inflation, wr_df)
 
 tab1, tab2, tab3 = st.tabs([
     'НЗП и РЗП за 2000-2023 гг.',
